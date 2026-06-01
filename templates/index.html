@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Didactify — Generador de Interfaces con IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0d12;
+  --surface:#111520;
+  --surface2:#171e2e;
+  --surface3:#1d2540;
+  --border:#252d42;
+  --border2:#2e3a56;
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --blue3:#1d4ed8;
+  --gold:#f59e0b;
+  --gold2:#fcd34d;
+  --green:#10b981;
+  --red:#ef4444;
+  --purple:#8b5cf6;
+  --text:#e2e8f0;
+  --text2:#94a3b8;
+  --text3:#4b5675;
+  --radius:10px;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* ══ AUTH ══ */
+#authScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden;}
+.auth-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 30% 20%,rgba(59,130,246,.12) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(139,92,246,.08) 0%,transparent 50%);}
+.auth-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 0%,transparent 100%);}
+.auth-card{position:relative;z-index:1;width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2.5rem;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset;animation:authIn .5s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes authIn{from{opacity:0;transform:translateY(28px) scale(.95)}to{opacity:1;transform:none}}
+.auth-logo-wrap{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:.5rem;}
+.auth-logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--blue),var(--blue3));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:var(--gold2);box-shadow:0 4px 20px rgba(59,130,246,.5);}
+.auth-logo-name{font-size:1.7rem;font-weight:800;color:var(--text);letter-spacing:-.02em;}
+.auth-logo-name span{color:var(--blue2);}
+.auth-subtitle{text-align:center;color:var(--text2);font-size:.82rem;margin-bottom:2rem;line-height:1.5;}
+.auth-tabs{display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:3px;margin-bottom:1.75rem;}
+.auth-tab{flex:1;padding:.6rem;text-align:center;cursor:pointer;border-radius:8px;font-size:.82rem;font-weight:700;color:var(--text2);transition:all .2s;}
+.auth-tab.active{background:var(--blue3);color:#fff;box-shadow:0 2px 10px rgba(59,130,246,.4);}
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-size:.75rem;font-weight:700;color:var(--text2);margin-bottom:.4rem;font-family:var(--mono);letter-spacing:.04em;}
+.form-group input{width:100%;padding:.75rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:.9rem;outline:none;transition:border-color .2s,box-shadow .2s;}
+.form-group input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15);}
+.form-group input::placeholder{color:var(--text3);}
+.auth-btn{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--blue),var(--blue3));border:none;border-radius:9px;color:#fff;font-family:var(--font);font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:.5rem;box-shadow:0 4px 16px rgba(59,130,246,.4);letter-spacing:-.01em;}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(59,130,246,.55);}
+.auth-error{text-align:center;font-family:var(--mono);font-size:.75rem;color:var(--gold2);margin-top:.75rem;min-height:1.2rem;}
+
+/* ══ APP ══ */
+#appScreen{display:none;flex-direction:column;height:100vh;}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;height:52px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);position:relative;z-index:10;}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),var(--purple),var(--gold),transparent);opacity:.5;}
+.logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;}
+.logo-badge{width:28px;height:28px;background:linear-gradient(135deg,var(--blue),var(--blue3));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--gold2);font-size:.8rem;box-shadow:0 2px 10px rgba(59,130,246,.4);}
+.logo-name{font-size:.95rem;font-weight:800;color:var(--text);letter-spacing:-.02em;}
+.logo-name span{color:var(--blue2);}
+.header-badge{padding:.2rem .65rem;border-radius:999px;font-size:.68rem;font-weight:700;font-family:var(--mono);background:rgba(59,130,246,.1);color:var(--blue2);border:1px solid rgba(59,130,246,.2);}
+.header-right{display:flex;align-items:center;gap:.6rem;}
+.user-pill{display:flex;align-items:center;gap:.5rem;padding:.3rem .75rem;background:var(--surface2);border:1px solid var(--border);border-radius:999px;font-size:.75rem;color:var(--text2);font-family:var(--mono);}
+.user-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(16,185,129,.7);}
+.logout-btn{padding:.3rem .7rem;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:.72rem;color:var(--text2);cursor:pointer;font-family:var(--mono);transition:all .2s;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+.app{display:grid;grid-template-columns:340px 1fr;flex:1;overflow:hidden;}
+
+/* ══ LEFT PANEL ══ */
+.left-panel{display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg);overflow:hidden;}
+.conv-header{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.conv-label{display:flex;align-items:center;gap:.45rem;font-family:var(--mono);font-size:.65rem;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;}
+.conv-label-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(16,185,129,.6);}
+.new-conv-btn{display:flex;align-items:center;gap:.35rem;padding:.28rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font);}
+.new-conv-btn:hover{background:var(--surface3);border-color:var(--blue);color:var(--blue2);}
+.chat-area{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.85rem;scroll-behavior:smooth;}
+.msg{display:flex;gap:.6rem;animation:msgIn .3s ease both;}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg-avatar{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;margin-top:2px;}
+.msg.ai .msg-avatar{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;font-size:.75rem;}
+.msg.user .msg-avatar{background:var(--surface2);border:1px solid var(--border);color:var(--text2);}
+.msg-bubble{flex:1;padding:.75rem .9rem;border-radius:10px;font-size:.845rem;line-height:1.65;}
+.msg.ai .msg-bubble{background:var(--surface);border:1px solid var(--border);}
+.msg.user .msg-bubble{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);}
+.msg-meta{font-family:var(--mono);font-size:.62rem;color:var(--text3);margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem;}
+.msg-meta-badge{background:rgba(59,130,246,.12);color:var(--blue2);padding:.1rem .4rem;border-radius:4px;font-size:.6rem;font-weight:600;}
+.suggestion-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.7rem;}
+.chip{padding:.22rem .6rem;border-radius:6px;font-family:var(--mono);font-size:.65rem;font-weight:500;border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .18s;background:var(--surface2);white-space:nowrap;}
+.chip:hover{border-color:var(--blue2);color:var(--blue2);background:rgba(59,130,246,.08);}
+.dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--blue2);animation:dotBounce 1.3s infinite;}
+.dots span:nth-child(2){animation-delay:.18s;background:var(--purple);}
+.dots span:nth-child(3){animation-delay:.36s;background:var(--gold);}
+@keyframes dotBounce{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-6px);opacity:1}}
+.input-area{padding:.85rem;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.input-box{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:.75rem .85rem .55rem;transition:border-color .2s,box-shadow .2s;}
+.input-box:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+#userInput{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:.875rem;resize:none;max-height:130px;min-height:22px;line-height:1.55;}
+#userInput::placeholder{color:var(--text3);}
+.input-toolbar{display:flex;align-items:center;justify-content:space-between;margin-top:.55rem;gap:.35rem;}
+.hint-chips{display:flex;gap:.3rem;flex-wrap:wrap;flex:1;}
+.hint-btn{display:flex;align-items:center;gap:.25rem;padding:.2rem .55rem;background:var(--surface3);border:1px solid var(--border);border-radius:6px;font-size:.65rem;color:var(--text3);cursor:pointer;font-family:var(--mono);transition:all .18s;white-space:nowrap;}
+.hint-btn:hover{border-color:var(--border2);color:var(--text2);}
+.send-btn{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--blue3));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 10px rgba(59,130,246,.45);}
+.send-btn:hover{transform:scale(1.1);box-shadow:0 4px 18px rgba(59,130,246,.6);}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none;}
+.send-btn svg{width:15px;height:15px;fill:white;}
+
+/* ══ RIGHT PANEL ══ */
+.right-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+.tabs{display:flex;align-items:center;background:var(--surface);border-bottom:1px solid var(--border);padding:0 .5rem;flex-shrink:0;gap:0;overflow-x:auto;}
+.tabs::-webkit-scrollbar{height:0;}
+.tab{display:flex;align-items:center;gap:.35rem;padding:.8rem 1rem;font-size:.75rem;font-weight:700;font-family:var(--font);color:var(--text3);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;letter-spacing:-.01em;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--blue2);border-bottom-color:var(--blue);}
+.tab-dot{width:5px;height:5px;border-radius:50%;background:var(--green);opacity:0;transition:opacity .2s;}
+.tab.active .tab-dot{opacity:1;}
+.panel-content{flex:1;overflow:hidden;position:relative;}
+.tab-panel{position:absolute;inset:0;overflow:auto;display:none;}
+.tab-panel.active{display:block;}
+.tab-panel::-webkit-scrollbar{width:4px;}
+.tab-panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* ══ PREVIEW ══ */
+#previewPanel{background:var(--surface2);display:flex;flex-direction:column;}
+.preview-controls{display:flex;align-items:center;gap:.35rem;padding:.5rem .85rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.device-btn{display:flex;align-items:center;gap:.3rem;padding:.28rem .65rem;border-radius:6px;background:transparent;border:1px solid transparent;font-size:.72rem;color:var(--text3);cursor:pointer;transition:all .18s;font-family:var(--mono);font-weight:500;}
+.device-btn:hover,.device-btn.active{background:var(--surface2);border-color:var(--border);color:var(--text);}
+.device-sep{width:1px;height:18px;background:var(--border);margin:0 .2rem;}
+.action-btns{margin-left:auto;display:flex;gap:.35rem;}
+.action-btn{display:flex;align-items:center;gap:.3rem;padding:.28rem .75rem;border-radius:6px;background:var(--surface2);border:1px solid var(--border);font-size:.7rem;color:var(--text2);cursor:pointer;font-family:var(--mono);font-weight:600;transition:all .18s;}
+.action-btn:hover{border-color:var(--blue2);color:var(--blue2);}
+.action-btn.save-btn:hover{border-color:var(--green);color:var(--green);}
+.action-btn.dl-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* THE FIX — preview wrapper fills available space and scrolls */
+#previewWrapper{
+  flex:1;
+  overflow:auto;
+  background:var(--surface2);
+  display:flex;
+  align-items:flex-start;
+  justify-content:stretch;
+  padding:1rem;
+}
+#previewInner{
+  width:100%;
+  background:white;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);
+  min-height:500px;
+}
+/* iframes injected here */
+#previewInner iframe{display:block;width:100%;border:none;background:white;min-height:500px;}
+.preview-empty{background:var(--surface);border:1px dashed var(--border2);border-radius:14px;width:100%;padding:4rem 2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;min-height:500px;}
+.preview-empty-icon{width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(139,92,246,.15));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2.2rem;}
+.preview-empty-title{font-size:1rem;font-weight:700;color:var(--text2);}
+.preview-empty-sub{font-size:.78rem;color:var(--text3);font-family:var(--mono);}
+.preview-empty-tips{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem;}
+.preview-tip-chip{padding:.25rem .7rem;border-radius:6px;font-size:.7rem;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);color:var(--text3);cursor:pointer;transition:all .2s;}
+.preview-tip-chip:hover{border-color:var(--blue2);color:var(--blue2);}
+
+/* ══ CODE ══ */
+#codePanel{background:#080c14;}
+.code-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5;}
+.code-lang{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.7rem;color:var(--green);font-weight:600;}
+.code-lang::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);}
+.copy-btn{padding:.28rem .75rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:.7rem;color:var(--text2);cursor:pointer;transition:all .18s;font-weight:600;}
+.copy-btn:hover{border-color:var(--green);color:var(--green);}
+#codeOutput{padding:1.5rem;font-family:var(--mono);font-size:.75rem;line-height:1.8;white-space:pre-wrap;word-break:break-word;color:#64748b;}
+
+/* ══ SAVED ══ */
+#savedPanel{background:var(--bg);}
+.saved-header{font-size:.72rem;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.85rem;}
+.saved-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.saved-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem;cursor:pointer;transition:all .2s;}
+.saved-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.4);}
+.saved-card-title{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.saved-card-date{font-family:var(--mono);font-size:.62rem;color:var(--text3);}
+.saved-card-actions{display:flex;gap:.3rem;margin-top:.65rem;}
+.saved-card-btn{padding:.18rem .5rem;border-radius:5px;font-family:var(--mono);font-size:.62rem;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .18s;font-weight:600;}
+.saved-card-btn:hover{border-color:var(--blue2);color:var(--blue2);}
+.saved-card-btn.del:hover{border-color:var(--red);color:var(--red);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;gap:.75rem;color:var(--text3);font-family:var(--mono);font-size:.78rem;}
+
+/* ══ DESIGN ══ */
+#designPanel{padding:1.1rem;background:var(--bg);overflow-y:auto;}
+.design-section{margin-bottom:1.6rem;}
+.design-section-title{font-family:var(--mono);font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.8rem;}
+.design-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;}
+.design-card{background:var(--surface);border:1.5px solid var(--border);border-radius:9px;padding:.8rem;cursor:pointer;transition:all .2s;}
+.design-card:hover{border-color:var(--border2);}
+.design-card.selected{border-color:var(--blue);background:rgba(59,130,246,.07);}
+.design-card-label{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.2rem;}
+.design-card-desc{font-size:.7rem;color:var(--text2);line-height:1.4;}
+.palette-row{display:flex;gap:.55rem;flex-wrap:wrap;}
+.palette-option{border-radius:9px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .2s;}
+.palette-option:hover,.palette-option.selected{border-color:var(--blue2);transform:scale(1.05);}
+.palette-colors{display:flex;height:26px;width:100px;}
+.palette-colors div{flex:1;}
+.palette-name{font-family:var(--mono);font-size:.6rem;color:var(--text2);padding:.2rem .35rem;background:var(--surface);text-align:center;}
+.apply-btn{width:100%;padding:.8rem;background:linear-gradient(135deg,var(--blue),var(--blue3));border:none;border-radius:9px;color:#fff;font-family:var(--font);font-weight:700;font-size:.875rem;cursor:pointer;transition:all .2s;margin-top:.6rem;box-shadow:0 4px 14px rgba(59,130,246,.4);letter-spacing:-.01em;}
+.apply-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(59,130,246,.55);}
+
+/* ══ MULTIPAGE ══ */
+#multipagePanel{background:var(--bg);}
+.mp-wrap{padding:1.1rem;overflow-y:auto;height:100%;}
+.mp-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:1.25rem;margin-bottom:1rem;}
+.mp-card-title{display:flex;align-items:center;gap:.5rem;font-size:.875rem;font-weight:800;color:var(--text);margin-bottom:.4rem;letter-spacing:-.02em;}
+.mp-card-sub{font-size:.78rem;color:var(--text2);line-height:1.55;margin-bottom:1rem;}
+.mp-field{margin-bottom:.8rem;}
+.mp-label{font-family:var(--mono);font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);display:block;margin-bottom:.3rem;}
+.mp-input,.mp-textarea{width:100%;padding:.65rem .85rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:.875rem;outline:none;transition:border-color .2s,box-shadow .2s;}
+.mp-input:focus,.mp-textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.mp-input::placeholder,.mp-textarea::placeholder{color:var(--text3);}
+.mp-textarea{resize:vertical;min-height:90px;line-height:1.55;}
+.mp-tip{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18);border-radius:9px;padding:.65rem .85rem;font-size:.75rem;color:var(--text2);line-height:1.55;margin-bottom:1rem;}
+.mp-tip strong{color:var(--blue2);}
+.mp-gen-btn{width:100%;padding:.85rem;background:linear-gradient(135deg,var(--blue),var(--blue3));border:none;border-radius:9px;color:#fff;font-family:var(--font);font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(59,130,246,.4);display:flex;align-items:center;justify-content:center;gap:.5rem;letter-spacing:-.01em;}
+.mp-gen-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(59,130,246,.55);}
+.mp-gen-btn:disabled{opacity:.45;cursor:not-allowed;}
+.mp-status{margin-top:.85rem;padding:.85rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:9px;font-family:var(--mono);font-size:.75rem;color:var(--text2);}
+.mp-progress-bar{height:3px;background:var(--border);border-radius:2px;margin-top:.6rem;overflow:hidden;}
+.mp-progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;animation:progressAnim 2.5s ease-in-out infinite;width:70%;}
+@keyframes progressAnim{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.mp-result{display:none;background:var(--surface);border:1px solid rgba(16,185,129,.3);border-radius:13px;padding:1.25rem;margin-bottom:1rem;}
+.mp-result-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;gap:.75rem;}
+.mp-result-title{font-size:.9rem;font-weight:800;color:var(--text);letter-spacing:-.02em;}
+.mp-result-sub{font-family:var(--mono);font-size:.65rem;color:var(--text3);margin-top:.2rem;}
+.mp-dl-btn{flex-shrink:0;padding:.5rem 1rem;background:linear-gradient(135deg,var(--gold),#d97706);border:none;border-radius:7px;color:#0d1117;font-weight:800;font-size:.78rem;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.mp-dl-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(245,158,11,.4);}
+.mp-pages-grid{display:flex;flex-direction:column;gap:.4rem;}
+.mp-page-item{display:flex;align-items:center;gap:.65rem;padding:.5rem .75rem;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .18s;}
+.mp-page-item:hover{border-color:var(--blue2);}
+.mp-page-icon{font-size:.8rem;opacity:.7;}
+.mp-page-name{font-family:var(--mono);font-size:.72rem;color:var(--blue2);font-weight:600;}
+.mp-page-title{font-size:.75rem;color:var(--text2);}
+.mp-page-preview-btn{margin-left:auto;padding:.15rem .5rem;border-radius:4px;font-family:var(--mono);font-size:.6rem;font-weight:600;background:rgba(59,130,246,.1);color:var(--blue2);border:1px solid rgba(59,130,246,.2);cursor:pointer;transition:all .18s;white-space:nowrap;}
+.mp-page-preview-btn:hover{background:rgba(59,130,246,.2);}
+.mp-projects-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;}
+.mp-projects-label{font-size:.78rem;font-weight:700;color:var(--text2);}
+.mp-refresh{padding:.22rem .6rem;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.68rem;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .18s;font-weight:600;}
+.mp-refresh:hover{border-color:var(--border2);color:var(--text2);}
+.mp-proj-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.85rem;margin-bottom:.5rem;transition:border-color .2s;}
+.mp-proj-card:hover{border-color:var(--border2);}
+.mp-proj-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem;}
+.mp-proj-name{font-size:.82rem;font-weight:700;color:var(--text);}
+.mp-proj-del{padding:.18rem .45rem;background:transparent;border:1px solid var(--border);border-radius:4px;font-size:.62rem;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .18s;font-weight:600;}
+.mp-proj-del:hover{border-color:var(--red);color:var(--red);}
+.mp-proj-files{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem;}
+.mp-file-tag{font-family:var(--mono);font-size:.62rem;background:rgba(59,130,246,.08);color:var(--blue2);padding:.1rem .42rem;border-radius:4px;border:1px solid rgba(59,130,246,.18);}
+.mp-proj-date{font-family:var(--mono);font-size:.6rem;color:var(--text3);}
+
+/* ══ PAGE PREVIEW MODAL ══ */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:1.5rem;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:960px;height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.8);animation:modalIn .3s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes modalIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-title{font-size:.85rem;font-weight:700;color:var(--text);font-family:var(--mono);}
+.modal-close{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .18s;}
+.modal-close:hover{border-color:var(--red);color:var(--red);}
+.modal-body{flex:1;overflow:hidden;background:white;}
+.modal-body iframe{display:block;width:100%;height:100%;border:none;background:white;}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;display:flex;align-items:center;gap:.6rem;font-size:.82rem;font-weight:600;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(20px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-bg"></div>
+  <div class="auth-grid"></div>
+  <div class="auth-card">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo-icon">D</div>
+      <div class="auth-logo-name"><span>Didactify</span></div>
+    </div>
+    <p class="auth-subtitle">Genera interfaces web profesionales con Inteligencia Artificial</p>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Iniciar sesión</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Registrarse</div>
+    </div>
+    <div id="loginForm">
+      <div class="form-group"><label>Usuario</label><input type="text" id="loginUsername" placeholder="tu_usuario" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="auth-btn" onclick="doLogin()">Entrar →</button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div class="form-group"><label>Usuario</label><input type="text" id="regUsername" placeholder="tu_usuario"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="correo@ejemplo.com"></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="regPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <button class="auth-btn" onclick="doRegister()">Crear cuenta →</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <header>
+    <a href="#" class="logo">
+      <div class="logo-badge">D</div>
+      <span class="logo-name"><span>Didactify</span></span>
+    </a>
+    <span class="header-badge">✦ IA Activa</span>
+    <div class="header-right">
+      <div class="user-pill"><div class="user-dot"></div><span id="usernameDisplay">usuario</span></div>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="app">
+    <!-- LEFT: Chat -->
+    <div class="left-panel">
+      <div class="conv-header">
+        <div class="conv-label"><div class="conv-label-dot"></div>Conversación</div>
+        <button class="new-conv-btn" onclick="newConversation()">+ Nueva</button>
+      </div>
+      <div class="chat-area" id="chatArea">
+        <div class="msg ai">
+          <div class="msg-avatar">✦</div>
+          <div class="msg-bubble">
+            <div class="msg-meta">Didactify <span class="msg-meta-badge">IA</span> · ahora</div>
+            ¡Hola! Soy tu asistente de diseño web. Describe la página que quieres y la genero al instante con código limpio y diseño profesional.
+            <div class="suggestion-chips">
+              <span class="chip" onclick="fillInput('Landing page moderna para una app de delivery de comida rápida con sección hero, menú destacado y llamada a acción')">🍔 Restaurante/Food</span>
+              <span class="chip" onclick="fillInput('Dashboard de administración con métricas de ventas, gráficas de barras CSS y tabla de usuarios recientes')">📊 Dashboard admin</span>
+              <span class="chip" onclick="fillInput('Portfolio profesional para diseñador UX con proyectos en grid, habilidades con barras de progreso y formulario de contacto')">🎨 Portfolio creativo</span>
+              <span class="chip" onclick="fillInput('Landing page SaaS para software de gestión de proyectos con hero impactante, 3 planes de precio y sección de testimonios')">🚀 SaaS Landing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="input-box">
+          <textarea id="userInput" rows="1"
+            placeholder="Describe la interfaz que quieres crear..."
+            oninput="autoResize(this)"
+            onkeydown="handleKey(event)"></textarea>
+          <div class="input-toolbar">
+            <div class="hint-chips">
+              <button class="hint-btn" onclick="fillInput('Cambia a un tema oscuro con colores neón y efectos glow')">🌙 Dark</button>
+              <button class="hint-btn" onclick="fillInput('Agrega animaciones de entrada suaves y efectos hover en todas las cards')">✨ Animar</button>
+              <button class="hint-btn" onclick="fillInput('Rediseña con estilo más minimalista, más espacio blanco y tipografía grande')">◻ Minimal</button>
+              <button class="hint-btn" onclick="fillInput('Agrega sección de testimonios con avatares, nombres, cargo y citas')">💬 Testimonios</button>
+            </div>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Enviar (Enter)">
+              <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Panels -->
+    <div class="right-panel">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('preview')"><div class="tab-dot"></div>Vista Previa</div>
+        <div class="tab" onclick="switchTab('code')"><div class="tab-dot"></div>Código</div>
+        <div class="tab" onclick="switchTab('saved')"><div class="tab-dot"></div>Guardadas</div>
+        <div class="tab" onclick="switchTab('design')"><div class="tab-dot"></div>Diseño</div>
+        <div class="tab" onclick="switchTab('multipage')"><div class="tab-dot"></div>🌐 Multi-Página</div>
+      </div>
+      <div class="panel-content">
+
+        <!-- PREVIEW -->
+        <div class="tab-panel active" id="previewPanel" style="display:flex;flex-direction:column;">
+          <div class="preview-controls">
+            <button class="device-btn active" onclick="setDevice('desktop',this)">🖥 Desktop</button>
+            <div class="device-sep"></div>
+            <button class="device-btn" onclick="setDevice('tablet',this)">📱 Tablet</button>
+            <button class="device-btn" onclick="setDevice('mobile',this)">📲 Móvil</button>
+            <div class="action-btns">
+              <button class="action-btn save-btn" onclick="saveInterface()">💾 Guardar</button>
+              <button class="action-btn dl-btn" onclick="downloadHTML()">⬇ Descargar</button>
+            </div>
+          </div>
+          <div id="previewWrapper">
+            <div id="previewInner">
+              <div class="preview-empty">
+                <div class="preview-empty-icon">✦</div>
+                <div class="preview-empty-title">Tu interfaz aparecerá aquí</div>
+                <div class="preview-empty-sub">Escribe un prompt en el chat para empezar</div>
+                <div class="preview-empty-tips">
+                  <span class="preview-tip-chip" onclick="fillInput('Landing page para negocio de consultoría legal')">💼 Consultoría</span>
+                  <span class="preview-tip-chip" onclick="fillInput('Tienda online de ropa con grid de productos y filtros')">👗 E-commerce</span>
+                  <span class="preview-tip-chip" onclick="fillInput('App de fitness con rutinas semanales y tracker de progreso')">💪 Fitness App</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CODE -->
+        <div class="tab-panel" id="codePanel">
+          <div class="code-toolbar">
+            <div class="code-lang">HTML · CSS · JavaScript</div>
+            <button class="copy-btn" onclick="copyCode()">📋 Copiar</button>
+          </div>
+          <pre id="codeOutput" style="color:var(--text3);font-style:italic;padding:1.5rem;font-size:.75rem;">// El código generado aparecerá aquí...</pre>
+        </div>
+
+        <!-- SAVED -->
+        <div class="tab-panel" id="savedPanel">
+          <div id="savedContent" style="padding:1rem;">
+            <div class="empty-state"><span style="font-size:1.8rem">💾</span><span>No hay interfaces guardadas aún</span></div>
+          </div>
+        </div>
+
+        <!-- DESIGN -->
+        <div class="tab-panel" id="designPanel">
+          <div class="design-section">
+            <div class="design-section-title">Paleta de colores</div>
+            <div class="palette-row" id="paletteRow"></div>
+          </div>
+          <div class="design-section">
+            <div class="design-section-title">Estilo visual</div>
+            <div class="design-grid">
+              <div class="design-card selected" onclick="selectStyle(this,'moderno')" data-style="moderno"><div class="design-card-label">🎯 Moderno</div><div class="design-card-desc">Clean, gradientes, cards</div></div>
+              <div class="design-card" onclick="selectStyle(this,'minimalista')" data-style="minimalista"><div class="design-card-label">◻ Minimalista</div><div class="design-card-desc">Espacio blanco, tipografía</div></div>
+              <div class="design-card" onclick="selectStyle(this,'educativo')" data-style="educativo"><div class="design-card-label">🎓 Educativo</div><div class="design-card-desc">Colores vibrantes, iconos</div></div>
+              <div class="design-card" onclick="selectStyle(this,'oscuro')" data-style="oscuro"><div class="design-card-label">🌙 Dark Mode</div><div class="design-card-desc">Fondo oscuro, neón</div></div>
+              <div class="design-card" onclick="selectStyle(this,'elegante')" data-style="elegante"><div class="design-card-label">✨ Elegante</div><div class="design-card-desc">Lujo, premium, refinado</div></div>
+              <div class="design-card" onclick="selectStyle(this,'playful')" data-style="playful"><div class="design-card-label">🎮 Playful</div><div class="design-card-desc">Divertido, colorido</div></div>
+            </div>
+          </div>
+          <div class="design-section">
+            <div class="design-section-title">Tipografía</div>
+            <div class="design-grid">
+              <div class="design-card selected" onclick="selectFont(this,'Poppins')"><div class="design-card-label">Aa Poppins</div><div class="design-card-desc">Amigable, moderna</div></div>
+              <div class="design-card" onclick="selectFont(this,'Outfit')"><div class="design-card-label">Aa Outfit</div><div class="design-card-desc">Limpia, tech</div></div>
+              <div class="design-card" onclick="selectFont(this,'Nunito')"><div class="design-card-label">Aa Nunito</div><div class="design-card-desc">Educativa, redondeada</div></div>
+              <div class="design-card" onclick="selectFont(this,'Raleway')"><div class="design-card-label">Aa Raleway</div><div class="design-card-desc">Elegante, editorial</div></div>
+            </div>
+          </div>
+          <button class="apply-btn" onclick="applyDesign()">⚡ Aplicar cambios de diseño</button>
+        </div>
+
+        <!-- MULTIPAGE -->
+        <div class="tab-panel" id="multipagePanel">
+          <div class="mp-wrap">
+            <div class="mp-card">
+              <div class="mp-card-title">🌐 Generador Multi-Página</div>
+              <p class="mp-card-sub">Describe tu sitio web completo y la IA generará todas las páginas enlazadas, listas para descargar como ZIP. Puedes previsualizar cada página antes de descargar.</p>
+              <div class="mp-field">
+                <label class="mp-label">Título del proyecto</label>
+                <input id="mpTitle" class="mp-input" type="text" placeholder="ej: La Milla — Compra-venta de Autos">
+              </div>
+              <div class="mp-field">
+                <label class="mp-label">Descripción del sitio</label>
+                <textarea id="mpPrompt" class="mp-textarea" placeholder="ej: Sitio para concesionaria 'La Milla'. 3 páginas: Inicio con vehículos destacados y hero llamativo, Catálogo con grid de autos con precio y detalles, Contacto con formulario y ubicación. Diseño oscuro moderno con colores naranja y gris."></textarea>
+              </div>
+              <div class="mp-tip">
+                💡 <strong>Tip:</strong> Entre más detallada la descripción, mejor el resultado. Menciona cuántas páginas, qué secciones, colores y estilo. Máximo 3 páginas.
+              </div>
+              <button onclick="generateMultipage()" id="mpBtn" class="mp-gen-btn">
+                <span>⚡</span><span>Generar sitio multi-página</span>
+              </button>
+              <div id="mpStatus" class="mp-status" style="display:none;">
+                <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;">
+                  <span class="dots"><span></span><span></span><span></span></span>
+                  <span>Generando páginas... hasta 45 segundos</span>
+                </div>
+                <div class="mp-progress-bar"><div class="mp-progress-fill"></div></div>
+              </div>
+            </div>
+
+            <div id="mpResult" class="mp-result">
+              <div class="mp-result-head">
+                <div>
+                  <div id="mpResultTitle" class="mp-result-title"></div>
+                  <div id="mpResultSub" class="mp-result-sub"></div>
+                </div>
+                <button onclick="downloadZip()" class="mp-dl-btn">⬇ Descargar ZIP</button>
+              </div>
+              <div id="mpPagesList" class="mp-pages-grid"></div>
+            </div>
+
+            <div>
+              <div class="mp-projects-head">
+                <span class="mp-projects-label">Proyectos guardados</span>
+                <button onclick="loadMultipageProjects()" class="mp-refresh">↺ Actualizar</button>
+              </div>
+              <div id="mpProjectsList"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: page preview -->
+<div class="modal-overlay" id="pageModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">preview.html</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <iframe id="modalIframe" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toastIcon">✓</span><span id="toastMsg">OK</span></div>
+
+<script>
+const API = 'http://127.0.0.1:8000/api';
+let token = localStorage.getItem('didactify_token');
+let currentUser = JSON.parse(localStorage.getItem('didactify_user') || 'null');
+let currentConversationId = null;
+let generatedCode = '';
+let selectedStyle = 'moderno';
+let selectedFont = 'Poppins';
+let selectedPalette = null;
+let isLoading = false;
+let currentZipB64 = null;
+let currentZipFilename = 'proyecto.zip';
+let currentPages = []; // for multipage preview
+
+const palettes = [
+  { name:'Índigo',    colors:['#667eea','#764ba2','#f093fb','#f5f7fa'] },
+  { name:'Océano',    colors:['#0ea5e9','#06b6d4','#10b981','#f0f9ff'] },
+  { name:'Atardecer', colors:['#f97316','#ef4444','#8b5cf6','#fff7ed'] },
+  { name:'Bosque',    colors:['#16a34a','#15803d','#84cc16','#f0fdf4'] },
+  { name:'Noche',     colors:['#1e1b4b','#312e81','#4338ca','#0f172a'] },
+  { name:'Coral',     colors:['#fb7185','#f43f5e','#fbbf24','#fff1f2'] },
+];
+
+window.onload = () => { initPalettes(); if (token && currentUser) showApp(); };
+
+function initPalettes() {
+  document.getElementById('paletteRow').innerHTML = palettes.map((p,i) => `
+    <div class="palette-option" onclick="selectPalette(${i},this)">
+      <div class="palette-colors">${p.colors.map(c=>`<div style="background:${c}"></div>`).join('')}</div>
+      <div class="palette-name">${p.name}</div>
+    </div>`).join('');
+}
+
+/* ── Toast ── */
+function showToast(msg, icon='✓') {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastIcon').textContent = icon;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ── Modal ── */
+function openPageModal(html, filename) {
+  document.getElementById('modalTitle').textContent = filename;
+  document.getElementById('modalIframe').srcdoc = html;
+  document.getElementById('pageModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('pageModal').classList.remove('open');
+  // Delay srcdoc clear to avoid flash
+  setTimeout(() => { document.getElementById('modalIframe').srcdoc = ''; }, 300);
+}
+
+/* ── Auth ── */
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('loginForm').style.display = tab==='login'?'block':'none';
+  document.getElementById('registerForm').style.display = tab==='register'?'block':'none';
+  document.getElementById('authError').textContent = '';
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { showAuthError('Completa todos los campos'); return; }
+  try {
+    const res = await fetch(`${API}/auth/login/`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(data.error||'Error al iniciar sesión'); return; }
+    token = data.access; currentUser = data.user;
+    localStorage.setItem('didactify_token', token);
+    localStorage.setItem('didactify_user', JSON.stringify(currentUser));
+    showApp();
+  } catch(e) { showAuthError('No se pudo conectar al servidor'); }
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!username || !password) { showAuthError('Completa los campos requeridos'); return; }
+  try {
+    const res = await fetch(`${API}/auth/register/`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,email,password}) });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(JSON.stringify(data)); return; }
+    showAuthError('✅ Cuenta creada. Inicia sesión.');
+    switchAuthTab('login');
+    document.getElementById('loginUsername').value = username;
+  } catch(e) { showAuthError('No se pudo conectar al servidor'); }
+}
+
+function doLogout() {
+  token=null; currentUser=null; currentConversationId=null; generatedCode='';
+  localStorage.removeItem('didactify_token'); localStorage.removeItem('didactify_user');
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+}
+function showAuthError(msg) { document.getElementById('authError').textContent=msg; }
+function showApp() {
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='flex';
+  document.getElementById('usernameDisplay').textContent=currentUser.username;
+  loadSavedInterfaces();
+}
+
+/* ── API helper ── */
+async function apiFetch(url, options={}) {
+  const headers = {'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(options.headers||{})};
+  try {
+    const res = await fetch(`${API}${url}`, {...options,headers});
+    if (res.status===401) { doLogout(); return null; }
+    return res;
+  } catch(e) { return null; }
+}
+
+/* ── Chat ── */
+function fillInput(text) { const i=document.getElementById('userInput'); i.value=text; autoResize(i); i.focus(); }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,130)+'px'; }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+
+function addMessage(role, content, extra='') {
+  const chat = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const time = new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = `
+    <div class="msg-avatar">${role==='ai'?'✦':'Tú'}</div>
+    <div class="msg-bubble">
+      <div class="msg-meta">${role==='ai'?'Didactify <span class="msg-meta-badge">IA</span>':'Tú'} · ${time}</div>
+      ${content}${extra}
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addLoadingMsg() {
+  const chat = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className='msg ai'; div.id='loadingMsg';
+  div.innerHTML=`<div class="msg-avatar">✦</div><div class="msg-bubble"><div class="msg-meta">Didactify <span class="msg-meta-badge">IA</span> · generando...</div><div class="dots"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(div); chat.scrollTop=chat.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  input.value = ''; input.style.height = 'auto';
+  addMessage('user', text);
+  addLoadingMsg();
+  try {
+    const res = await apiFetch('/generate/', {
+      method:'POST',
+      body:JSON.stringify({message:text,conversation_id:currentConversationId,style:selectedStyle,font:selectedFont,palette:selectedPalette?selectedPalette.colors.join(','):null})
+    });
+    document.getElementById('loadingMsg')?.remove();
+    if (!res) { addMessage('ai','⚠️ Error de conexión con el servidor.'); isLoading=false; document.getElementById('sendBtn').disabled=false; return; }
+    const data = await res.json();
+    if (!res.ok) { addMessage('ai',`⚠️ ${data.error||'Error al generar la interfaz.'}`); isLoading=false; document.getElementById('sendBtn').disabled=false; return; }
+    currentConversationId = data.conversation_id;
+    const chips = (data.suggestions||[]).map(s=>`<span class="chip" onclick="fillInput(${JSON.stringify(s)})">→ ${s}</span>`).join('');
+    addMessage('ai', data.message, `<div class="suggestion-chips">${chips}</div>`);
+    const html = data.html || '';
+    if (html.trim().length > 50) {
+      generatedCode = html;
+      updatePreview(html);
+      updateCode(html);
+      switchTab('preview');
+    } else {
+      addMessage('ai','⚠️ La interfaz generada estuvo vacía. Intenta con una descripción más detallada.');
+    }
+  } catch(e) {
+    document.getElementById('loadingMsg')?.remove();
+    addMessage('ai','⚠️ Error de conexión con el servidor.');
+  }
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function newConversation() {
+  currentConversationId=null; generatedCode='';
+  document.getElementById('chatArea').innerHTML=`
+    <div class="msg ai">
+      <div class="msg-avatar">✦</div>
+      <div class="msg-bubble">
+        <div class="msg-meta">Didactify <span class="msg-meta-badge">IA</span> · ahora</div>
+        Nueva conversación. ¿Qué interfaz quieres crear hoy?
+      </div>
+    </div>`;
+  document.getElementById('previewInner').innerHTML=`
+    <div class="preview-empty">
+      <div class="preview-empty-icon">✦</div>
+      <div class="preview-empty-title">Tu interfaz aparecerá aquí</div>
+      <div class="preview-empty-sub">Describe tu interfaz en el chat →</div>
+    </div>`;
+  document.getElementById('codeOutput').textContent='// El código generado aparecerá aquí...';
+}
+
+/* ── Preview — FIXED ── */
+function updatePreview(html) {
+  const inner = document.getElementById('previewInner');
+  inner.innerHTML = '';
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-modals');
+  iframe.style.cssText = 'display:block;width:100%;border:none;background:white;min-height:500px;';
+  inner.appendChild(iframe);
+
+  // srcdoc is the most reliable method — avoids about:blank issues
+  iframe.srcdoc = html;
+
+  // Auto-resize to content height after load
+  iframe.addEventListener('load', () => {
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      const h = Math.max(
+        doc.documentElement.scrollHeight,
+        doc.body ? doc.body.scrollHeight : 0,
+        500
+      );
+      iframe.style.height = h + 'px';
+    } catch(e) {
+      iframe.style.height = '700px';
+    }
+  });
+}
+
+function updateCode(html) { document.getElementById('codeOutput').textContent = html; }
+
+function setDevice(device, btn) {
+  document.querySelectorAll('.device-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const inner = document.getElementById('previewInner');
+  const wrapper = document.getElementById('previewWrapper');
+  if (device==='desktop') { inner.style.width='100%'; wrapper.style.justifyContent='stretch'; }
+  else if (device==='tablet') { inner.style.width='768px'; wrapper.style.justifyContent='center'; }
+  else { inner.style.width='375px'; wrapper.style.justifyContent='center'; }
+}
+
+function copyCode() {
+  if (!generatedCode) return;
+  navigator.clipboard.writeText(generatedCode).then(()=>showToast('Código copiado!','📋'));
+}
+
+function downloadHTML() {
+  if (!generatedCode) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([generatedCode],{type:'text/html'}));
+  a.download = 'interfaz-didactify.html'; a.click();
+  showToast('Descargando HTML...','⬇');
+}
+
+async function saveInterface() {
+  if (!generatedCode) { showToast('Primero genera una interfaz','⚠️'); return; }
+  const title = prompt('Nombre para esta interfaz:','Mi interfaz');
+  if (!title) return;
+  const res = await apiFetch('/interfaces/',{method:'POST',body:JSON.stringify({title,html_code:generatedCode,style:selectedStyle,font:selectedFont,conversation:currentConversationId})});
+  if (res&&res.ok) { showToast('Guardada correctamente','✅'); loadSavedInterfaces(); }
+}
+
+async function loadSavedInterfaces() {
+  const res = await apiFetch('/interfaces/');
+  if (!res) return;
+  const data = await res.json();
+  const container = document.getElementById('savedContent');
+  if (!data.length) {
+    container.innerHTML='<div class="empty-state" style="height:200px"><span style="font-size:1.8rem">💾</span><span>No hay interfaces guardadas aún</span></div>';
+    return;
+  }
+  container.innerHTML=`<div style="padding:1rem"><div class="saved-header">Guardadas (${data.length})</div><div class="saved-grid">${data.map(i=>`
+    <div class="saved-card">
+      <div class="saved-card-title">${i.title}</div>
+      <div class="saved-card-date">${new Date(i.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</div>
+      <div class="saved-card-actions">
+        <button class="saved-card-btn" onclick="loadInterface(${JSON.stringify(i.html_code).replace(/"/g,'&quot;')})">👁 Ver</button>
+        <button class="saved-card-btn del" onclick="deleteInterface(${i.id})">🗑</button>
+      </div>
+    </div>`).join('')}</div></div>`;
+}
+
+function loadInterface(html) { generatedCode=html; updatePreview(html); updateCode(html); switchTab('preview'); }
+
+async function deleteInterface(id) {
+  if (!confirm('¿Eliminar esta interfaz?')) return;
+  const res = await apiFetch(`/interfaces/${id}/`,{method:'DELETE'});
+  if (res&&res.ok) { showToast('Eliminada','🗑'); loadSavedInterfaces(); }
+}
+
+/* ── Design ── */
+function selectPalette(i,el) { document.querySelectorAll('.palette-option').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); selectedPalette=palettes[i]; }
+function selectStyle(el,style) { document.querySelectorAll('.design-card[data-style]').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); selectedStyle=style; }
+function selectFont(el,font) { document.querySelectorAll('#designPanel .design-grid:last-of-type .design-card').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); selectedFont=font; }
+function applyDesign() {
+  if (!generatedCode) { showToast('Primero genera una interfaz','⚠️'); return; }
+  fillInput(`Aplica estos cambios: estilo ${selectedStyle}, fuente ${selectedFont}${selectedPalette?', paleta '+selectedPalette.name:''}. Mantén el contenido idéntico, solo cambia el diseño.`);
+  sendMessage();
+}
+
+/* ── Tabs ── */
+function switchTab(tab) {
+  const ids=['preview','code','saved','design','multipage'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.remove('active');});
+  const panel = document.getElementById(tab+'Panel');
+  panel.classList.add('active');
+  if (tab==='saved') loadSavedInterfaces();
+  if (tab==='multipage') loadMultipageProjects();
+}
+
+/* ── Multi-Page ── */
+async function generateMultipage() {
+  const prompt = document.getElementById('mpPrompt').value.trim();
+  const title = document.getElementById('mpTitle').value.trim() || 'Mi Proyecto Web';
+  if (!prompt) { showToast('Describe tu sitio web primero','⚠️'); return; }
+
+  const btn = document.getElementById('mpBtn');
+  const statusEl = document.getElementById('mpStatus');
+  const result = document.getElementById('mpResult');
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="dots"><span></span><span></span><span></span></span><span style="margin-left:.5rem">Generando...</span>';
+  statusEl.style.display='block';
+  result.style.display='none';
+
+  try {
+    const res = await fetch(`${API}/multipage/generate/`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+      body:JSON.stringify({prompt,title})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Error generando proyecto');
+
+    currentZipB64 = data.zip_b64;
+    currentZipFilename = data.zip_filename;
+    // Store full page data for preview (backend needs to return pages_html)
+    currentPages = data.pages_html || data.pages || [];
+
+    document.getElementById('mpResultTitle').textContent = '✅ '+data.title;
+    document.getElementById('mpResultSub').textContent = `${data.pages.length} páginas generadas · Listo para descargar`;
+
+    document.getElementById('mpPagesList').innerHTML = data.pages.map((p,i)=>`
+      <div class="mp-page-item" onclick="previewMpPage(${i})">
+        <span class="mp-page-icon">📄</span>
+        <span class="mp-page-name">${p.filename}</span>
+        <span class="mp-page-title">— ${p.title}</span>
+        <button class="mp-page-preview-btn" onclick="event.stopPropagation();previewMpPage(${i})">👁 Preview</button>
+      </div>`).join('');
+
+    result.style.display='block';
+    showToast('Sitio generado correctamente','🌐');
+    loadMultipageProjects();
+  } catch(e) {
+    showToast('Error: '+e.message,'❌');
+    alert('Error al generar: '+e.message);
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML='<span>⚡</span><span>Generar sitio multi-página</span>';
+    statusEl.style.display='none';
+  }
+}
+
+function previewMpPage(index) {
+  const page = currentPages[index];
+  if (!page || !page.html_code) {
+    showToast('Preview no disponible — descarga el ZIP para ver las páginas','ℹ️');
+    return;
+  }
+  openPageModal(page.html_code, page.filename);
+}
+
+function downloadZip() {
+  if (!currentZipB64) return;
+  const bytes = atob(currentZipB64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
+  const blob = new Blob([arr],{type:'application/zip'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=currentZipFilename; a.click(); URL.revokeObjectURL(url);
+  showToast('Descargando ZIP...','⬇');
+}
+
+async function loadMultipageProjects() {
+  const list = document.getElementById('mpProjectsList');
+  list.innerHTML='<div style="font-family:var(--mono);font-size:.72rem;color:var(--text3);padding:.5rem 0">Cargando...</div>';
+  try {
+    const res = await fetch(`${API}/multipage/projects/`,{headers:{'Authorization':`Bearer ${token}`}});
+    const data = await res.json();
+    if (!data.length) { list.innerHTML='<div style="font-family:var(--mono);font-size:.75rem;color:var(--text3);padding:1rem 0;text-align:center">No hay proyectos guardados aún</div>'; return; }
+    list.innerHTML=data.map(p=>`
+      <div class="mp-proj-card">
+        <div class="mp-proj-head">
+          <span class="mp-proj-name">🌐 ${p.title}</span>
+          <button onclick="deleteMultipageProject(${p.id})" class="mp-proj-del">🗑 Eliminar</button>
+        </div>
+        <div class="mp-proj-files">${p.pages.map(pg=>`<span class="mp-file-tag">${pg.filename}</span>`).join('')}</div>
+        <div class="mp-proj-date">${p.created_at}</div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML='<div style="font-size:.75rem;color:var(--red);padding:.5rem">Error cargando proyectos</div>'; }
+}
+
+async function deleteMultipageProject(id) {
+  if (!confirm('¿Eliminar este proyecto?')) return;
+  await fetch(`${API}/multipage/projects/${id}/`,{method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+  showToast('Proyecto eliminado','🗑');
+  loadMultipageProjects();
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>

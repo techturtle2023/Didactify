@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Didactify — Genera interfaces educativas con IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;
+  --surface:#161b22;
+  --surface2:#1c2333;
+  --surface3:#21262d;
+  --border:#30363d;
+  --border2:#444c56;
+  --azul:#1a73e8;
+  --azul2:#4d9ef7;
+  --azul-dark:#1557b0;
+  --dorado:#d4a843;
+  --dorado2:#f0c96a;
+  --verde:#2ea043;
+  --text:#e6edf3;
+  --text2:#8b949e;
+  --text3:#656d76;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;}
+::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0.45rem 2.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;
+  animation:slideDown 0.4s ease both;
+}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--azul),var(--dorado),var(--azul));opacity:0.5;}
+@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.topbar-left{font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;}
+.topbar-right{display:flex;gap:1.5rem;}
+.topbar-right a{font-family:var(--mono);font-size:0.65rem;color:var(--text3);text-decoration:none;transition:color 0.2s;}
+.topbar-right a:hover{color:var(--dorado2);}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(13,17,23,0.9);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.nav-wrap{max-width:1180px;margin:0 auto;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:0.7rem;text-decoration:none;}
+.logo-badge{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--azul),var(--azul-dark));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;font-weight:800;color:var(--dorado2);
+  box-shadow:0 4px 12px rgba(26,115,232,0.4);
+  animation:logoPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes logoPop{from{opacity:0;transform:scale(0.5) rotate(-20deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+.logo:hover .logo-badge{transform:rotate(-6deg) scale(1.1);}
+.logo-name{font-size:1.2rem;font-weight:800;color:var(--text);}
+.logo-name span{color:var(--azul2);}
+.logo-sub{font-family:var(--mono);font-size:0.58rem;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-top:1px;}
+.nav-links{display:flex;align-items:center;}
+.nav-links a{
+  padding:0 1rem;height:64px;display:flex;align-items:center;
+  font-size:0.875rem;font-weight:600;color:var(--text2);text-decoration:none;
+  border-bottom:2px solid transparent;transition:all 0.2s;
+}
+.nav-links a:hover{color:var(--text);border-bottom-color:var(--azul2);}
+.nav-btns{display:flex;gap:0.5rem;align-items:center;}
+.btn-ghost-nav{
+  padding:0.45rem 1.1rem;background:transparent;
+  border:1px solid var(--border2);border-radius:7px;
+  font-size:0.85rem;font-weight:600;color:var(--text2);
+  text-decoration:none;transition:all 0.2s;font-family:var(--font);
+}
+.btn-ghost-nav:hover{border-color:var(--azul2);color:var(--text);}
+.btn-solid-nav{
+  padding:0.45rem 1.2rem;
+  background:linear-gradient(135deg,var(--azul),var(--azul-dark));
+  border:none;border-radius:7px;
+  font-size:0.85rem;font-weight:700;color:#fff;
+  text-decoration:none;transition:all 0.2s;font-family:var(--font);
+  box-shadow:0 4px 12px rgba(26,115,232,0.35);
+}
+.btn-solid-nav:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(26,115,232,0.5);}
+
+/* ── HERO ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:5.5rem 2rem 0;
+  background:var(--bg);
+}
+.hero-radial{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 55% at 50% -10%,rgba(26,115,232,0.18) 0%,transparent 60%),
+             radial-gradient(ellipse 40% 30% at 80% 70%,rgba(212,168,67,0.06) 0%,transparent 50%);
+}
+.hero-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 0%,transparent 70%);
+}
+
+.hero-inner{max-width:1180px;margin:0 auto;display:flex;align-items:flex-end;gap:4rem;position:relative;}
+.hero-left{flex:1;padding-bottom:5rem;animation:heroUp 0.9s ease 0.1s both;}
+.hero-right{flex:0.88;animation:heroUp 0.9s ease 0.3s both;}
+@keyframes heroUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+.hero-pill{
+  display:inline-flex;align-items:center;gap:0.55rem;
+  background:rgba(26,115,232,0.12);border:1px solid rgba(26,115,232,0.3);
+  border-radius:999px;padding:0.32rem 0.9rem;
+  font-family:var(--mono);font-size:0.68rem;color:var(--azul2);
+  letter-spacing:0.07em;margin-bottom:1.5rem;
+  animation:pillPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;
+}
+@keyframes pillPop{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:var(--verde);animation:blink 2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+h1{font-size:clamp(2.2rem,4.5vw,3.6rem);font-weight:800;line-height:1.12;color:var(--text);margin-bottom:1.25rem;}
+h1 .hl{
+  background:linear-gradient(135deg,var(--azul2),var(--dorado2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{font-size:1.05rem;line-height:1.8;color:var(--text2);max-width:500px;margin-bottom:2.25rem;font-weight:400;}
+.hero-btns{display:flex;gap:0.85rem;flex-wrap:wrap;}
+.btn-primary{
+  padding:0.85rem 2rem;
+  background:linear-gradient(135deg,var(--azul),var(--azul-dark));
+  border:none;border-radius:10px;
+  color:#fff;font-weight:700;font-size:0.95rem;
+  font-family:var(--font);cursor:pointer;text-decoration:none;
+  transition:all 0.25s;box-shadow:0 4px 18px rgba(26,115,232,0.4);
+}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(26,115,232,0.55);}
+.btn-secondary{
+  padding:0.85rem 2rem;background:transparent;
+  border:1px solid var(--border2);border-radius:10px;
+  color:var(--text2);font-weight:600;font-size:0.95rem;
+  font-family:var(--font);cursor:pointer;text-decoration:none;transition:all 0.25s;
+}
+.btn-secondary:hover{border-color:var(--azul2);color:var(--text);transform:translateY(-2px);}
+
+/* Hero mockup card */
+.hero-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px 14px 0 0;
+  padding:1.6rem;
+  box-shadow:0 -4px 40px rgba(0,0,0,0.4);
+}
+.hcard-top{display:flex;align-items:center;gap:0.7rem;margin-bottom:1.4rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.hcard-dots{display:flex;gap:5px;}
+.hcard-dot{width:10px;height:10px;border-radius:50%;}
+.hcard-dot.r{background:#f85149;}.hcard-dot.y{background:var(--dorado);}.hcard-dot.g{background:var(--verde);}
+.hcard-title-wrap{margin-left:auto;display:flex;align-items:center;gap:0.5rem;}
+.hcard-title{font-family:var(--mono);font-size:0.7rem;color:var(--text3);}
+.hcard-badge{
+  font-family:var(--mono);font-size:0.62rem;
+  background:rgba(46,160,67,0.15);color:var(--verde);
+  border:1px solid rgba(46,160,67,0.25);
+  padding:0.15rem 0.5rem;border-radius:4px;
+}
+.hcard-bar{
+  height:8px;background:var(--surface2);border-radius:4px;
+  margin-bottom:0.55rem;width:0;
+  transition:width 1.1s cubic-bezier(0.4,0,0.2,1);
+}
+.hcard-bar.go.full{width:100%;}
+.hcard-bar.go.w80{width:80%;}
+.hcard-bar.go.w60{width:60%;}
+.hcard-bar.go.w88{width:88%;}
+.hcard-bar.go.w42{width:42%;}
+.hcard-bar.accent{background:linear-gradient(90deg,var(--azul),var(--azul2));}
+.hcard-tags{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:1rem;}
+.hcard-tag{
+  padding:0.18rem 0.55rem;border-radius:5px;
+  font-size:0.62rem;font-family:var(--mono);
+  background:rgba(26,115,232,0.12);color:var(--azul2);
+  border:1px solid rgba(26,115,232,0.2);
+  opacity:0;transform:translateY(5px);transition:all 0.35s ease;
+}
+.hcard-tag.go{opacity:1;transform:translateY(0);}
+
+/* Stats */
+.stats-strip{background:var(--surface);border-top:1px solid var(--border);padding:1.4rem 2rem;}
+.stats-inner{max-width:1180px;margin:0 auto;display:flex;justify-content:space-around;flex-wrap:wrap;gap:1rem;}
+.stat{text-align:center;opacity:0;transform:translateY(12px);transition:all 0.5s ease;}
+.stat.go{opacity:1;transform:translateY(0);}
+.stat-n{font-size:1.8rem;font-weight:800;color:var(--azul2);}
+.stat-l{font-family:var(--mono);font-size:0.68rem;color:var(--text3);margin-top:0.15rem;}
+
+/* Stripe */
+.stripe{height:1px;background:linear-gradient(90deg,transparent,var(--azul),var(--dorado),var(--azul),transparent);}
+
+/* Sections */
+section{padding:5rem 2rem;}
+.inner{max-width:1180px;margin:0 auto;}
+.sec-tag{
+  display:inline-flex;align-items:center;gap:0.45rem;
+  background:rgba(26,115,232,0.1);border:1px solid rgba(26,115,232,0.2);
+  color:var(--azul2);font-family:var(--mono);font-size:0.68rem;
+  font-weight:500;letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.25rem 0.75rem;border-radius:999px;margin-bottom:0.75rem;
+}
+.sec-tag::before{content:'✦';font-size:0.55rem;}
+h2{font-size:clamp(1.6rem,3vw,2.3rem);font-weight:800;color:var(--text);line-height:1.2;margin-bottom:0.85rem;}
+h2 .hl{color:var(--azul2);}
+.sec-lead{font-size:1rem;color:var(--text2);line-height:1.75;max-width:520px;}
+
+/* Reveal */
+.r{opacity:0;transform:translateY(22px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.r.go{opacity:1;transform:translateY(0);}
+.d1{transition-delay:.07s}.d2{transition-delay:.15s}.d3{transition-delay:.23s}.d4{transition-delay:.31s}
+
+/* Features */
+#features{background:var(--bg);}
+.feat-grid {
+  display: grid;
+  /* Se cambió 280px por 320px para forzar un máximo de 3 columnas */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1px;
+  margin-top: 3rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--border);
+}
+.feat-item{
+  padding:1.75rem;background:var(--surface);
+  opacity:0;transform:translateY(18px);
+  transition:opacity 0.5s ease,transform 0.5s ease,background 0.2s;
+  position:relative;overflow:hidden;
+}
+.feat-item.go{opacity:1;transform:translateY(0);}
+.feat-item::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:linear-gradient(180deg,var(--azul),var(--dorado));transition:height 0.35s ease;}
+.feat-item:hover{background:var(--surface2);}
+.feat-item:hover::before{height:100%;}
+.feat-num{font-family:var(--mono);font-size:0.62rem;color:var(--azul2);letter-spacing:0.08em;margin-bottom:0.85rem;}
+.feat-icon{font-size:1.5rem;margin-bottom:0.85rem;display:block;}
+.feat-title{font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:0.5rem;}
+.feat-desc{font-size:0.85rem;color:var(--text2);line-height:1.65;}
+
+/* Steps */
+#como{background:var(--surface);}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem;position:relative;}
+.steps::before{content:'';position:absolute;top:30px;left:calc(16.7% + 1rem);right:calc(16.7% + 1rem);height:1px;background:linear-gradient(90deg,var(--azul),var(--dorado),var(--azul));z-index:0;}
+.step{text-align:center;padding:0 1rem;position:relative;z-index:1;opacity:0;transform:translateY(18px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.step.go{opacity:1;transform:translateY(0);}
+.step-num{
+  width:60px;height:60px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;font-weight:800;color:var(--text);
+  margin:0 auto 1.1rem;
+  box-shadow:0 0 0 5px var(--surface),0 8px 24px rgba(0,0,0,0.3);
+  transition:all 0.3s;
+}
+.step:hover .step-num{border-color:var(--azul);color:var(--azul2);transform:scale(1.1);}
+.step-n-label{font-family:var(--mono);font-size:0.62rem;color:var(--azul2);margin-bottom:0.45rem;display:block;}
+.step-title{font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:0.45rem;}
+.step-desc{font-size:0.82rem;color:var(--text2);line-height:1.65;}
+
+/* CTA */
+.cta-section{
+  background:var(--surface);
+  padding:5rem 2rem;position:relative;overflow:hidden;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.cta-section::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(26,115,232,0.06) 0%,transparent 70%);
+}
+.cta-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:2.5rem;flex-wrap:wrap;position:relative;}
+.cta-text h2{font-size:clamp(1.5rem,3vw,2rem);margin-bottom:0.5rem;}
+.cta-text p{color:var(--text2);font-size:0.95rem;}
+.cta-btns{display:flex;gap:0.75rem;flex-shrink:0;}
+
+/* Contact */
+#contacto{background:var(--bg);}
+.contact-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:4rem;margin-top:3rem;}
+.contact-item{margin-bottom:1.75rem;}
+.c-label{font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.35rem;}
+.c-val{font-size:0.93rem;color:var(--text);font-weight:500;line-height:1.5;}
+.c-val a{color:var(--azul2);text-decoration:none;transition:color 0.2s;}
+.c-val a:hover{color:var(--text);}
+.contact-form{display:flex;flex-direction:column;gap:0.9rem;}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;}
+.field{display:flex;flex-direction:column;gap:0.3rem;}
+.field label{font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;}
+.field input,.field select,.field textarea{
+  padding:0.75rem 1rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:var(--font);font-size:0.9rem;
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;width:100%;
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(26,115,232,0.12);}
+.field textarea{resize:vertical;min-height:110px;}
+.field select{background:var(--surface);cursor:pointer;}
+.btn-send{
+  padding:0.8rem 2rem;
+  background:linear-gradient(135deg,var(--azul),var(--azul-dark));
+  border:none;border-radius:8px;color:#fff;
+  font-family:var(--font);font-weight:700;font-size:0.9rem;
+  cursor:pointer;align-self:flex-start;
+  transition:all 0.2s;box-shadow:0 4px 14px rgba(26,115,232,0.35);
+}
+.btn-send:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,115,232,0.5);}
+
+/* Footer */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:3rem 2rem 1.5rem;}
+footer::before{content:'';display:block;height:1px;background:linear-gradient(90deg,transparent,var(--azul),var(--dorado),var(--azul),transparent);margin-bottom:3rem;opacity:0.4;}
+.footer-inner{max-width:1180px;margin:0 auto;}
+.footer-top{display:flex;gap:3.5rem;margin-bottom:2.5rem;flex-wrap:wrap;}
+.footer-brand{flex:1.5;}
+.footer-logo-row{display:flex;align-items:center;gap:0.7rem;margin-bottom:0.85rem;}
+.f-badge{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--azul),var(--azul-dark));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:0.9rem;font-weight:800;color:var(--dorado2);
+}
+.f-name{font-size:1.1rem;font-weight:800;color:var(--text);}
+.f-tagline{font-size:0.8rem;color:var(--text3);line-height:1.65;max-width:260px;}
+.footer-col h4{font-size:0.82rem;font-weight:700;color:var(--text2);margin-bottom:0.85rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;}
+.footer-col a{display:block;font-size:0.82rem;color:var(--text3);text-decoration:none;margin-bottom:0.45rem;transition:color 0.2s;}
+.footer-col a:hover{color:var(--azul2);}
+.footer-hr{border:none;border-top:1px solid var(--border);margin-bottom:1.25rem;}
+.f-copy{font-family:var(--mono);font-size:0.65rem;color:var(--text3);}
+
+@media(max-width:900px){
+  .hero-inner{flex-direction:column;gap:2.5rem;}
+  .hero-right{width:100%;}
+  .steps{grid-template-columns:1fr;gap:2rem;}
+  .steps::before{display:none;}
+  .contact-grid{grid-template-columns:1fr;gap:2.5rem;}
+  .form-2{grid-template-columns:1fr;}
+  .nav-links,.topbar-right{display:none;}
+  .cta-inner{flex-direction:column;text-align:center;}
+  .cta-btns{justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-left">Didactify · Plataforma Educativa con IA</span>
+  <div class="topbar-right"><a href="mailto:hola@didactify.mx">hola@didactify.mx</a></div>
+</div>
+
+<nav>
+  <div class="nav-wrap">
+    <a href="#" class="logo">
+      <div class="logo-badge">D</div>
+      <div>
+        <div class="logo-name"><span>Didactify</span></div>
+        <div class="logo-sub">Plataforma educativa · IA</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#">Inicio</a>
+      <a href="#features">Características</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#contacto">Contacto</a>
+    </div>
+    <div class="nav-btns">
+      <a href="/app/" class="btn-ghost-nav">Iniciar sesión</a>
+      <a href="/app/" class="btn-solid-nav">Comenzar →</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-radial"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-pill"><span class="pill-dot"></span>Generación de interfaces con IA</div>
+      <h1>Crea paginas web y contenido educativo con <span class="hl">Inteligencia Artificial</span></h1>
+      <p class="hero-sub">Describe lo que necesitas — una pagina, un quiz, un curso, un dashboard — y Didactify genera el código completo al instante.</p>
+      <div class="hero-btns">
+        <a href="/app/" class="btn-primary">Comenzar →</a>
+        <a href="#como" class="btn-secondary">¿Cómo funciona?</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-card">
+        <div class="hcard-top">
+          <div class="hcard-dots"><div class="hcard-dot r"></div><div class="hcard-dot y"></div><div class="hcard-dot g"></div></div>
+          <div class="hcard-title-wrap">
+            <span class="hcard-title">Quiz de Matemáticas</span>
+            <span class="hcard-badge">● generando</span>
+          </div>
+        </div>
+        <div class="hcard-bar accent full"></div>
+        <div class="hcard-bar w88"></div>
+        <div class="hcard-bar w60"></div>
+        <div class="hcard-bar w80"></div>
+        <div class="hcard-bar w42"></div>
+        <div class="hcard-tags">
+          <span class="hcard-tag">Quiz interactivo</span>
+          <span class="hcard-tag">Responsive</span>
+          <span class="hcard-tag">HTML listo</span>
+          <span class="hcard-tag">Multi-página</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stats-strip">
+    <div class="stats-inner">
+      <div class="stat"><div class="stat-n">100%</div><div class="stat-l">Código funcional</div></div>
+      <div class="stat"><div class="stat-n">∞</div><div class="stat-l">Iteraciones</div></div>
+      <div class="stat"><div class="stat-n">JWT</div><div class="stat-l">Acceso seguro</div></div>
+      <div class="stat"><div class="stat-n">ZIP</div><div class="stat-l">Multi-página</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="stripe"></div>
+
+<section id="features">
+  <div class="inner">
+    <div class="sec-tag r">Características</div>
+    <h2 class="r d1">Todo lo que necesitas <span class="hl">para generar sitios web y contenido educativo </span></h2>
+    <p class="sec-lead r d2">Diseñado para profesores, tutores y creadores de contenido que quieren producir más en menos tiempo.</p>
+    <div class="feat-grid">
+      <div class="feat-item" style="transition-delay:.05s"><div class="feat-num">01</div><span class="feat-icon">🤖</span><div class="feat-title">Generación con IA</div><div class="feat-desc">Describe en español y la IA genera HTML, CSS y JavaScript completo y listo para usar en segundos.</div></div>
+      <div class="feat-item" style="transition-delay:.12s"><div class="feat-num">02</div><span class="feat-icon">💬</span><div class="feat-title">Refinamiento por chat</div><div class="feat-desc">Conversa para ajustar colores, contenido y funcionalidad. Sin límite de iteraciones.</div></div>
+      <div class="feat-item" style="transition-delay:.19s"><div class="feat-num">03</div><span class="feat-icon">💾</span><div class="feat-title">Proyectos guardados</div><div class="feat-desc">Todas tus interfaces se guardan en tu cuenta. Accede y continúa desde cualquier dispositivo.</div></div>
+      <div class="feat-item" style="transition-delay:.05s"><div class="feat-num">04</div><span class="feat-icon">📱</span><div class="feat-title">Vista previa en vivo</div><div class="feat-desc">Visualiza en desktop, tablet y móvil antes de descargar. El código siempre es responsive.</div></div>
+      <div class="feat-item" style="transition-delay:.12s"><div class="feat-num">05</div><span class="feat-icon">🌐</span><div class="feat-title">Sitios multi-página</div><div class="feat-desc">Genera sitios completos con navegación entre páginas, descargables como ZIP listo para publicar.</div></div>
+      <div class="feat-item" style="transition-delay:.19s"><div class="feat-num">06</div><span class="feat-icon">🔐</span><div class="feat-title">Acceso seguro</div><div class="feat-desc">Autenticación con JWT. Tu cuenta y proyectos son completamente privados y protegidos.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="como">
+  <div class="inner">
+    <div class="sec-tag r">El proceso</div>
+    <h2 class="r d1">Así de <span class="hl">sencillo</span></h2>
+    <p class="sec-lead r d2">Sin necesidad de saber programar ni diseñar. Solo describe lo que necesitas.</p>
+    <div class="steps">
+      <div class="step" style="transition-delay:.1s">
+        <div class="step-num">1</div>
+        <span class="step-n-label">Paso uno</span>
+        <div class="step-title">Describe tu idea</div>
+        <div class="step-desc">Escribe en español lo que necesitas: "un quiz de historia con 5 preguntas y retroalimentación inmediata".</div>
+      </div>
+      <div class="step" style="transition-delay:.25s">
+        <div class="step-num">2</div>
+        <span class="step-n-label">Paso dos</span>
+        <div class="step-title">La IA genera el código</div>
+        <div class="step-desc">En segundos obtienes el HTML, CSS y JavaScript completo y funcional, listo para usar.</div>
+      </div>
+      <div class="step" style="transition-delay:.4s">
+        <div class="step-num">3</div>
+        <span class="step-n-label">Paso tres</span>
+        <div class="step-title">Ajusta y descarga</div>
+        <div class="step-desc">Refina por chat cuantas veces necesites y descarga el archivo final para publicarlo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-text r">
+      <h2>¿Listo para transformar tu forma de enseñar?</h2>
+      <p>Crea tu primera interfaz educativa en menos de un minuto. Sin tarjeta de crédito.</p>
+    </div>
+    <div class="cta-btns r d2">
+      <a href="/app/" class="btn-primary">Crear cuenta gratuita →</a>
+      <a href="#contacto" class="btn-secondary">Hablar con el equipo</a>
+    </div>
+  </div>
+</div>
+
+<section id="contacto">
+  <div class="inner">
+    <div class="sec-tag r">Contacto</div>
+    <h2 class="r d1">Ponte en <span class="hl">contacto</span></h2>
+    <p class="sec-lead r d2">¿Tienes preguntas, quieres una demo institucional o necesitas soporte? Escríbenos.</p>
+    <div class="contact-grid">
+      <div class="r d1">
+        <div class="contact-item"><div class="c-label">Correo general</div><div class="c-val"><a href="mailto:hola@didactify.mx">hola@didactify.mx</a></div></div>
+        <div class="contact-item"><div class="c-label">Soporte técnico</div><div class="c-val"><a href="mailto:soporte@didactify.mx">soporte@didactify.mx</a></div></div>
+        <div class="contact-item"><div class="c-label">Horario</div><div class="c-val">Lunes a viernes · 9:00 – 18:00 hrs (CDMX)</div></div>
+        <div class="contact-item"><div class="c-label">Demos institucionales</div><div class="c-val">Disponibles para universidades y centros educativos. Solicita una sesión personalizada.</div></div>
+      </div>
+      <form class="contact-form r d2" onsubmit="return false;">
+        <div class="form-2">
+          <div class="field"><label>Nombre</label><input type="text" placeholder="Tu nombre completo"></div>
+          <div class="field"><label>Institución</label><input type="text" placeholder="Tu escuela o universidad"></div>
+        </div>
+        <div class="field"><label>Correo</label><input type="email" placeholder="correo@ejemplo.com"></div>
+        <div class="field"><label>Asunto</label>
+          <select>
+            <option>Consulta general</option>
+            <option>Demo institucional</option>
+            <option>Soporte técnico</option>
+            <option>Colaboración académica</option>
+            <option>Otra</option>
+          </select>
+        </div>
+        <div class="field"><label>Mensaje</label><textarea placeholder="Describe tu consulta o necesidad..."></textarea></div>
+        <button class="btn-send" type="submit">Enviar mensaje →</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><div class="f-badge">D</div><span class="f-name">Didactify</span></div>
+        <p class="f-tagline">Plataforma de generación de interfaces educativas con Inteligencia Artificial. Diseñada para docentes y creadores de contenido.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Plataforma</h4>
+        <a href="#features">Características</a>
+        <a href="#como">Cómo funciona</a>
+        <a href="/app/">Iniciar sesión</a>
+        <a href="/app/">Crear cuenta</a>
+      </div>
+      <div class="footer-col">
+        <h4>Soporte</h4>
+        <a href="#contacto">Contacto</a>
+        <a href="mailto:soporte@didactify.mx">Soporte técnico</a>
+      </div>
+    </div>
+    <hr class="footer-hr">
+    <div class="f-copy">© 2026 Didactify · Todos los derechos reservados</div>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(e => {
+  e.forEach(x => { if(x.isIntersecting){ x.target.classList.add('go'); io.unobserve(x.target); }});
+}, {threshold:0.1});
+document.querySelectorAll('.r,.feat-item,.step,.stat').forEach(el => io.observe(el));
+
+setTimeout(() => {
+  document.querySelectorAll('.hcard-bar').forEach((b,i) => setTimeout(() => b.classList.add('go'), i*120+700));
+  document.querySelectorAll('.hcard-tag').forEach((t,i) => setTimeout(() => t.classList.add('go'), i*90+1400));
+}, 200);
+
+const sio = new IntersectionObserver(e => {
+  e.forEach(x => {
+    if(x.isIntersecting){
+      x.target.querySelectorAll('.stat').forEach((s,i) => setTimeout(() => s.classList.add('go'), i*130));
+      sio.unobserve(x.target);
+    }
+  });
+}, {threshold:0.3});
+const sb = document.querySelector('.stats-strip');
+if(sb) sio.observe(sb);
+</script>
+</body>
+</html>
